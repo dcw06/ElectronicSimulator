@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monte Carlo Field Lab</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/math.css">
+</head>
+<body>
+  <div class="noise"></div>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="brand-mark">MC</span><span>Field Lab</span></a>
+    <div class="status"><span class="status-dot"></span><span id="statusText">连接本地求解器…</span></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">GPU-READY · 2D DIRICHLET SOLVER</p>
+        <h1>从随机路径，<br><em>看见场。</em></h1>
+        <p class="intro">二维 Laplace 方程的 Monte Carlo 实验台。配置网格与采样规模，实时观察电势、误差和电场结构。</p>
+      </div>
+      <div class="equation-card">
+        <div class="eq-label">GOVERNING EQUATION</div>
+        <math display="block"><mrow><msup><mo>∇</mo><mn>2</mn></msup><mi>V</mi><mo>=</mo><mn>0</mn></mrow></math>
+        <div class="eq-divider"></div>
+        <math display="block"><mrow><mi mathvariant="bold">E</mi><mo>=</mo><mo>−</mo><mo>∇</mo><mi>V</mi></mrow></math>
+        <div class="eq-note">Ω ⊂ ℝ² · V|<sub>∂Ω</sub> = g</div>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="controls panel">
+        <div class="panel-heading"><span>01</span><h2>实验参数</h2></div>
+        <label>网格宽度 <output id="nxValue">40</output>
+          <input id="nx" type="range" min="8" max="96" step="4" value="40">
+        </label>
+        <label>网格高度 <output id="nyValue">40</output>
+          <input id="ny" type="range" min="8" max="96" step="4" value="40">
+        </label>
+        <label>每点随机游走
+          <select id="walks">
+            <option value="250">250 · 快速预览</option>
+            <option value="500">500</option>
+            <option value="1000" selected>1,000 · 推荐</option>
+            <option value="2000">2,000</option>
+            <option value="4096">4,096 · 高精度</option>
+          </select>
+        </label>
+        <label>随机种子
+          <input id="seed" type="number" min="0" value="123456789">
+        </label>
+        <div class="boundary">
+          <span>Dirichlet 边界</span>
+          <math display="block"><mtable columnalign="right left" rowspacing=".3em">
+            <mtr><mtd><mi>V</mi><mo>(</mo><mn>0</mn><mo>,</mo><mi>y</mi><mo>)</mo></mtd><mtd><mo>=</mo><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mi>V</mi><mo>(</mo><mn>1</mn><mo>,</mo><mi>y</mi><mo>)</mo></mtd><mtd><mo>=</mo><mn>1</mn></mtd></mtr>
+            <mtr><mtd><mi>V</mi><mo>(</mo><mi>x</mi><mo>,</mo><mn>0</mn><mo>)</mo></mtd><mtd><mo>=</mo><mi>x</mi></mtd></mtr>
+            <mtr><mtd><mi>V</mi><mo>(</mo><mi>x</mi><mo>,</mo><mn>1</mn><mo>)</mo></mtd><mtd><mo>=</mo><mi>x</mi></mtd></mtr>
+          </mtable></math>
+        </div>
+        <button id="runButton"><span>运行模拟</span><span class="button-arrow">↗</span></button>
+        <p class="hint">当前主机使用 CPU 后端。CUDA 版本已编译，连接 NVIDIA GPU 后可切换。</p>
+      </aside>
+
+      <div class="results">
+        <div class="metrics">
+          <article><span>运行时间</span><strong id="runtime">—</strong><small>ms</small></article>
+          <article><span>解析解 RMSE</span><strong id="rmse">—</strong></article>
+          <article><span>平均标准误差</span><strong id="meanError">—</strong></article>
+          <article><span>场强均值</span><strong id="meanField">—</strong></article>
+        </div>
+        <div class="visual-grid">
+          <article class="viz panel active-viz">
+            <div class="viz-title"><div><span>02</span><h3>电势 V(x,y)</h3></div><b id="potentialRange">—</b></div>
+            <canvas id="potentialCanvas"></canvas><div class="colorbar viridis"></div>
+          </article>
+          <article class="viz panel">
+            <div class="viz-title"><div><span>03</span><h3>电场强度 |E|</h3></div><b id="fieldRange">—</b></div>
+            <canvas id="fieldCanvas"></canvas><div class="colorbar magma"></div>
+          </article>
+          <article class="viz panel">
+            <div class="viz-title"><div><span>04</span><h3>Monte Carlo 误差</h3></div><b id="errorRange">—</b></div>
+            <canvas id="errorCanvas"></canvas><div class="colorbar amber"></div>
+          </article>
+          <article class="viz panel">
+            <div class="viz-title"><div><span>05</span><h3>电场矢量</h3></div><b>E = −∇V</b></div>
+            <canvas id="vectorCanvas"></canvas>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="theory">
+      <div class="theory-head">
+        <div><span class="section-index">06</span><p class="eyebrow">THE MATHEMATICS</p></div>
+        <h2>一次随机游走，<br>就是一次边界测量。</h2>
+        <p>调和函数在内部点的值，等于从该点出发的随机游走首次命中边界时，边界值的数学期望。</p>
+      </div>
+      <div class="formula-flow">
+        <article>
+          <span class="formula-no">I · HARMONIC</span>
+          <math display="block"><mrow><mi>V</mi><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mn>1</mn><mn>4</mn></mfrac><munder><mo>∑</mo><mrow><mi>q</mi><mo>∼</mo><mi>p</mi></mrow></munder><mi>V</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></math>
+          <p>离散 Laplace 方程：一点的电势等于四个相邻点的平均。</p>
+        </article>
+        <div class="flow-arrow">→</div>
+        <article class="featured-formula">
+          <span class="formula-no">II · EXPECTATION</span>
+          <math display="block"><mrow><mi>V</mi><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">E</mi><mo>[</mo><mi>g</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>τ</mi></msub><mo stretchy="false">)</mo><mo>]</mo></mrow></math>
+          <p>X<sub>τ</sub> 是轨迹第一次到达 ∂Ω 的位置，g 是该处边界值。</p>
+        </article>
+        <div class="flow-arrow">→</div>
+        <article>
+          <span class="formula-no">III · ESTIMATOR</span>
+          <math display="block"><mrow><msub><mover><mi>V</mi><mo>^</mo></mover><mi>N</mi></msub><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mn>1</mn><mi>N</mi></mfrac><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><mi>g</mi><mo stretchy="false">(</mo><msubsup><mi>X</mi><mi>τ</mi><mi>k</mi></msubsup><mo stretchy="false">)</mo></mrow></math>
+          <p>用 N 条相互独立的轨迹均值，得到内部电势的 Monte Carlo 估计。</p>
+        </article>
+      </div>
+      <div class="error-law">
+        <span>CONVERGENCE LAW</span>
+        <math><mrow><mi>SE</mi><mo>(</mo><msub><mover><mi>V</mi><mo>^</mo></mover><mi>N</mi></msub><mo>)</mo><mo>=</mo><msqrt><mfrac><mrow><mi>Var</mi><mo>[</mo><mi>g</mi><mo>(</mo><msub><mi>X</mi><mi>τ</mi></msub><mo>)</mo><mo>]</mo></mrow><mi>N</mi></mfrac></msqrt><mo>∝</mo><msup><mi>N</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msup></mrow></math>
+        <p>采样数增加 4 倍，统计误差约减半。</p>
+      </div>
+    </section>
+  </main>
+  <div id="toast" role="status"></div>
+  <script src="assets/app.js"></script>
+</body>
+</html>

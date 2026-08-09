@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.exe
+
+output/
+output-*/
+*.log
