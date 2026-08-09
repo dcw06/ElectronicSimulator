@@ -31,6 +31,23 @@ build\Release\mc_field_solver.exe --nx 256 --ny 256 --walks 4096 --backend cuda 
 
 Output files are `potential.csv`, `stderr.csv`, `Ex.csv`, `Ey.csv`, and `E.csv`.
 
+## MUSA on academy.mthreads
+
+The MUSA build targets the MTT S4000 (`mp_22`) and uses the Toolkit installed at
+`/usr/local/musa` by default.
+
+```bash
+export MUSA_HOME=/usr/local/musa
+export PATH="$MUSA_HOME/bin:$PATH"
+export LD_LIBRARY_PATH="$MUSA_HOME/lib:${LD_LIBRARY_PATH:-}"
+
+./build_musa.sh
+./build-musa/mc_field_solver --nx 64 --ny 64 --walks 4096 \
+  --backend musa --output output-musa
+```
+
+Override `MUSA_ARCH` if the Academy instance provides a different MT GPU.
+
 ## Visualize
 
 ```powershell
@@ -49,3 +66,12 @@ NVIDIA GPU and compatible driver. The current Intel-only system can run the CPU 
 
 Open <http://127.0.0.1:8000>. The API validates grid and sampling limits, invokes the
 native solver, and returns potential, standard error, and electric-field matrices.
+
+To use the MUSA executable in the web interface on Academy:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install Flask
+MC_FIELD_SOLVER="$PWD/build-musa/mc_field_solver" MC_BACKEND=musa python web/app.py
+```

@@ -19,6 +19,9 @@ if os.name == "nt":
 else:
     default_solver = ROOT / "build" / "mc_field_solver"
 SOLVER = Path(os.environ.get("MC_FIELD_SOLVER", default_solver))
+BACKEND = os.environ.get("MC_BACKEND", "cpu").lower()
+if BACKEND not in {"cpu", "cuda", "musa"}:
+    raise RuntimeError("MC_BACKEND must be cpu, cuda, or musa")
 RUNS = ROOT / "output" / "web"
 RUNS.mkdir(parents=True, exist_ok=True)
 
@@ -51,10 +54,7 @@ def status():
     return jsonify({
         "ready": SOLVER.exists(),
         "solver": str(SOLVER),
-        "backend": "cpu",
-        "cudaCompiled": True,
-        "cudaRunnable": False,
-        "reason": "No NVIDIA GPU detected on this host",
+        "backend": BACKEND,
     })
 
 
@@ -83,7 +83,7 @@ def solve():
     # represent the Chinese workspace path on every Windows code page.
     output_argument = Path("output") / "web" / run_id
     command = [str(SOLVER), "--nx", str(nx), "--ny", str(ny), "--walks",
-               str(walks), "--seed", str(seed), "--backend", "cpu",
+               str(walks), "--seed", str(seed), "--backend", BACKEND,
                "--output", str(output_argument)]
     started = time.perf_counter()
     try:

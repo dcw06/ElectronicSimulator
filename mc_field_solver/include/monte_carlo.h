@@ -19,6 +19,10 @@ Solution solve_cpu(const Domain& domain, int num_walks, std::uint64_t seed);
 Solution solve_cuda(const Domain& domain, int num_walks, std::uint64_t seed,
                     int block_size);
 #endif
+#ifdef MC_HAVE_MUSA
+Solution solve_musa(const Domain& domain, int num_walks, std::uint64_t seed,
+                    int block_size);
+#endif
 
 void compute_field(const Domain& domain, Solution& solution);
 void write_results(const std::string& directory, const Domain& domain,

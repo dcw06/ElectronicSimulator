@@ -17,7 +17,7 @@ static Options parse(int argc, char** argv) {
         const std::string key = argv[i];
         if (key == "--help") {
             std::cout << "Usage: mc_field_solver [--nx N] [--ny N] [--walks N] "
-                         "[--backend cpu|cuda] [--block-size N] [--seed N] "
+                         "[--backend cpu|cuda|musa] [--block-size N] [--seed N] "
                          "[--output DIR] [--max-rmse X]\n";
             std::exit(0);
         }
@@ -49,8 +49,14 @@ int main(int argc, char** argv) {
 #else
             throw std::runtime_error("this build has no CUDA backend");
 #endif
+        } else if (o.backend == "musa") {
+#ifdef MC_HAVE_MUSA
+            solution = solve_musa(domain, o.walks, o.seed, o.block_size);
+#else
+            throw std::runtime_error("this build has no MUSA backend");
+#endif
         } else {
-            throw std::invalid_argument("backend must be cpu or cuda");
+            throw std::invalid_argument("backend must be cpu, cuda, or musa");
         }
         const double rmse = linear_rmse(domain, solution);
         write_results(o.output, domain, solution);
