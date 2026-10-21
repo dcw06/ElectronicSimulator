@@ -1,0 +1,13 @@
+name: CPU validation
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  analytic-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: cmake -S mc_field_solver -B build -DMC_ENABLE_CUDA=OFF -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build --parallel 2
+      - run: ctest --test-dir build --output-on-failure
+      - run: make -C 摩尔线程 cpu

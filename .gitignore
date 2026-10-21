@@ -12,3 +12,8 @@ CMakeCache.txt
 output/
 output-*/
 *.log
+
+# Rebuild native executables locally.
+摩尔线程/mc_laplace_cpu
+摩尔线程/mc_laplace_cuda
+摩尔线程/mc_laplace_musa
